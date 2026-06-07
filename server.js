@@ -1,59 +1,60 @@
 const express = require("express");
 const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
+const WebSocket = require("ws");
 
 const app = express();
-app.use(cors());
-
 const server = http.createServer(app);
 
-const io = new Server(server, {
-    cors: {
-        origin: "*"
-    }
-});
+const wss = new WebSocket.Server({ server });
 
 let players = {};
 
-io.on("connection", (socket) => {
+wss.on("connection", (ws) => {
 
-    console.log("Jogador conectado:", socket.id);
+    const id = Math.random().toString(36).substr(2, 9);
 
-    players[socket.id] = {
-        x: 0,
-        y: 0,
-        z: 0,
-        rx: 0,
-        ry: 0,
-        rz: 0
-    };
+    console.log("Jogador conectado:", id);
 
-    io.emit("players", players);
+    players[id] = { x: 0, y: 0, z: 0 };
 
-    socket.on("updatePlayer", (data) => {
+    ws.send(JSON.stringify({
+        type: "players",
+        data: players
+    }));
 
-        players[socket.id] = {
-            x: data.x,
-            y: data.y,
-            z: data.z,
-            rx: data.rx,
-            ry: data.ry,
-            rz: data.rz
-        };
+    ws.on("message", (msg) => {
+        try {
+            const data = JSON.parse(msg);
 
-        io.emit("players", players);
+            if (data.type === "update") {
+                players[id] = data.data;
+
+                // envia pra todos
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            type: "players",
+                            data: players
+                        }));
+                    }
+                });
+            }
+        } catch (e) {}
     });
 
-    socket.on("disconnect", () => {
+    ws.on("close", () => {
+        delete players[id];
 
-        delete players[socket.id];
-
-        io.emit("players", players);
-
-        console.log("Jogador saiu:", socket.id);
+        // atualiza todos
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                    type: "players",
+                    data: players
+                }));
+            }
+        });
     });
-
 });
 
 server.listen(process.env.PORT || 3000, () => {
