@@ -3,6 +3,11 @@ const http = require("http");
 const WebSocket = require("ws");
 
 const app = express();
+
+app.get("/", (req, res) => {
+    res.send("Servidor online OK");
+});
+
 const server = http.createServer(app);
 
 const wss = new WebSocket.Server({ server });
@@ -29,23 +34,17 @@ wss.on("connection", (ws) => {
             if (data.type === "update") {
                 players[id] = data.data;
 
-                // envia pra todos
-                wss.clients.forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                            type: "players",
-                            data: players
-                        }));
-                    }
-                });
+                broadcast();
             }
         } catch (e) {}
     });
 
     ws.on("close", () => {
         delete players[id];
+        broadcast();
+    });
 
-        // atualiza todos
+    function broadcast() {
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
@@ -54,7 +53,7 @@ wss.on("connection", (ws) => {
                 }));
             }
         });
-    });
+    }
 });
 
 server.listen(process.env.PORT || 3000, () => {
