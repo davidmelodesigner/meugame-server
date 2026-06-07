@@ -14,9 +14,9 @@ const wss = new WebSocket.Server({ server });
 let players = {};
 
 // ---------------------------
-// BROADCAST
+// BROADCAST FIXO (20x por segundo)
 // ---------------------------
-function broadcast() {
+setInterval(() => {
     const data = JSON.stringify({
         type: "players",
         data: players
@@ -27,25 +27,23 @@ function broadcast() {
             client.send(data);
         }
     });
-}
+
+}, 50);
 
 // ---------------------------
-// HEARTBEAT CLEANUP
+// CLEANUP (SAFE)
 // ---------------------------
 setInterval(() => {
     const now = Date.now();
 
     for (const id in players) {
-        if (!players[id].lastSeen) continue;
-
         if (now - players[id].lastSeen > 5000) {
             console.log("Removendo player inativo:", id);
             delete players[id];
         }
     }
 
-    broadcast();
-}, 2000);
+}, 1000);
 
 // ---------------------------
 // CONNECTION
@@ -74,8 +72,6 @@ wss.on("connection", (ws) => {
         data: players
     }));
 
-    broadcast();
-
     // ---------------------------
     // MESSAGE
     // ---------------------------
@@ -96,15 +92,13 @@ wss.on("connection", (ws) => {
                     ry: p.ry ?? players[id].ry,
                     rz: p.rz ?? players[id].rz,
 
-                    walk: p.walk ?? false,
-                    run: p.run ?? false,
-                    attack: p.attack ?? false,
-                    special: p.special ?? false,
+                    walk: p.walk ?? players[id].walk,
+                    run: p.run ?? players[id].run,
+                    attack: p.attack ?? players[id].attack,
+                    special: p.special ?? players[id].special,
 
                     lastSeen: Date.now()
                 };
-
-                broadcast();
             }
 
         } catch (e) {}
@@ -116,13 +110,9 @@ wss.on("connection", (ws) => {
     ws.on("close", () => {
         console.log("Player desconectado:", id);
         delete players[id];
-        broadcast();
     });
 });
 
-// ---------------------------
-// START
-// ---------------------------
 server.listen(process.env.PORT || 3000, () => {
     console.log("Servidor online");
 });
