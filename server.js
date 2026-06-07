@@ -30,7 +30,7 @@ function broadcast() {
 }
 
 // ---------------------------
-// CLEANUP (HEARTBEAT SYSTEM)
+// HEARTBEAT CLEANUP
 // ---------------------------
 setInterval(() => {
     const now = Date.now();
@@ -59,10 +59,15 @@ wss.on("connection", (ws) => {
     players[id] = {
         x: 0, y: 0, z: 0,
         rx: 0, ry: 0, rz: 0,
+
+        walk: false,
+        run: false,
+        attack: false,
+        special: false,
+
         lastSeen: Date.now()
     };
 
-    // envia init
     ws.send(JSON.stringify({
         type: "init",
         id: id,
@@ -80,8 +85,22 @@ wss.on("connection", (ws) => {
 
             if (data.type === "update") {
 
+                const p = data.data;
+
                 players[id] = {
-                    ...data.data,
+                    x: p.x ?? players[id].x,
+                    y: p.y ?? players[id].y,
+                    z: p.z ?? players[id].z,
+
+                    rx: p.rx ?? players[id].rx,
+                    ry: p.ry ?? players[id].ry,
+                    rz: p.rz ?? players[id].rz,
+
+                    walk: p.walk ?? false,
+                    run: p.run ?? false,
+                    attack: p.attack ?? false,
+                    special: p.special ?? false,
+
                     lastSeen: Date.now()
                 };
 
@@ -92,7 +111,7 @@ wss.on("connection", (ws) => {
     });
 
     // ---------------------------
-    // CLOSE (backup only)
+    // CLOSE
     // ---------------------------
     ws.on("close", () => {
         console.log("Player desconectado:", id);
@@ -102,7 +121,7 @@ wss.on("connection", (ws) => {
 });
 
 // ---------------------------
-// START SERVER
+// START
 // ---------------------------
 server.listen(process.env.PORT || 3000, () => {
     console.log("Servidor online");
