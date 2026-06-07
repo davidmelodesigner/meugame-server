@@ -14,7 +14,7 @@ const wss = new WebSocket.Server({ server });
 let players = {};
 
 // ---------------------------
-// BROADCAST FIXO (20x por segundo)
+// BROADCAST (STREAM FIXO)
 // ---------------------------
 setInterval(() => {
     const data = JSON.stringify({
@@ -28,10 +28,10 @@ setInterval(() => {
         }
     });
 
-}, 50);
+}, 66); // ~15x por segundo (mais estável que 20x)
 
 // ---------------------------
-// CLEANUP (SAFE)
+// CLEANUP (ANTI-FANTASMA)
 // ---------------------------
 setInterval(() => {
     const now = Date.now();
@@ -55,19 +55,22 @@ wss.on("connection", (ws) => {
     console.log("Jogador conectado:", id);
 
     players[id] = {
-        x: 0, y: 0, z: 0,
-        rx: 0, ry: 0, rz: 0,
+        x: 0,
+        y: 0,
+        z: 0,
 
-        walk: false,
-        run: false,
-        attack: false,
-        special: false,
+        rx: 0,
+        ry: 0,
+        rz: 0,
 
         lastSeen: Date.now()
     };
 
+    // ---------------------------
+    // SNAPSHOT INICIAL
+    // ---------------------------
     ws.send(JSON.stringify({
-        type: "init",
+        type: "snapshot",
         id: id,
         data: players
     }));
@@ -83,22 +86,17 @@ wss.on("connection", (ws) => {
 
                 const p = data.data;
 
-                players[id] = {
-                    x: p.x ?? players[id].x,
-                    y: p.y ?? players[id].y,
-                    z: p.z ?? players[id].z,
+                if (!players[id]) return;
 
-                    rx: p.rx ?? players[id].rx,
-                    ry: p.ry ?? players[id].ry,
-                    rz: p.rz ?? players[id].rz,
+                players[id].x = p.x ?? players[id].x;
+                players[id].y = p.y ?? players[id].y;
+                players[id].z = p.z ?? players[id].z;
 
-                    walk: p.walk ?? players[id].walk,
-                    run: p.run ?? players[id].run,
-                    attack: p.attack ?? players[id].attack,
-                    special: p.special ?? players[id].special,
+                players[id].rx = p.rx ?? players[id].rx;
+                players[id].ry = p.ry ?? players[id].ry;
+                players[id].rz = p.rz ?? players[id].rz;
 
-                    lastSeen: Date.now()
-                };
+                players[id].lastSeen = Date.now();
             }
 
         } catch (e) {}
