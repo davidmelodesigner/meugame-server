@@ -9,10 +9,22 @@ app.get("/", (req, res) => {
 });
 
 const server = http.createServer(app);
-
 const wss = new WebSocket.Server({ server });
 
 let players = {};
+
+function broadcast() {
+    const data = JSON.stringify({
+        type: "players",
+        data: players
+    });
+
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(data);
+        }
+    });
+}
 
 wss.on("connection", (ws) => {
 
@@ -20,12 +32,18 @@ wss.on("connection", (ws) => {
 
     console.log("Jogador conectado:", id);
 
-    players[id] = { x: 0, y: 0, z: 0 };
+    players[id] = {
+        x: 0, y: 0, z: 0,
+        rx: 0, ry: 0, rz: 0
+    };
 
     ws.send(JSON.stringify({
-        type: "players",
+        type: "init",
+        id: id,
         data: players
     }));
+
+    broadcast();
 
     ws.on("message", (msg) => {
         try {
@@ -33,9 +51,9 @@ wss.on("connection", (ws) => {
 
             if (data.type === "update") {
                 players[id] = data.data;
-
                 broadcast();
             }
+
         } catch (e) {}
     });
 
@@ -43,17 +61,6 @@ wss.on("connection", (ws) => {
         delete players[id];
         broadcast();
     });
-
-    function broadcast() {
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    type: "players",
-                    data: players
-                }));
-            }
-        });
-    }
 });
 
 server.listen(process.env.PORT || 3000, () => {
