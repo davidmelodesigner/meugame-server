@@ -20,20 +20,15 @@ const wss = new WebSocket.Server({ server });
 let players = {};
 
 async function checkLogin(email, password) {
-    try {
-        const result = await pool.query(
-            "SELECT * FROM users WHERE email = $1 AND password = $2",
-            [email, password]
-        );
+    const result = await pool.query(
+        "SELECT * FROM users WHERE email = $1 AND password = $2",
+        [email, password]
+    );
 
-        return result.rows.length > 0 ? result.rows[0] : null;
-    } catch (err) {
-        console.log("Erro login:", err);
-        return null;
-    }
+    return result.rows.length > 0 ? result.rows[0] : null;
 }
 
-setInterval(() => {
+function broadcastPlayers() {
     const data = JSON.stringify({
         type: "players",
         data: players
@@ -44,8 +39,9 @@ setInterval(() => {
             client.send(data);
         }
     });
+}
 
-}, 66);
+setInterval(broadcastPlayers, 66);
 
 setInterval(() => {
     const now = Date.now();
@@ -59,85 +55,75 @@ setInterval(() => {
 
 wss.on("connection", (ws) => {
 
-    const id = Math.random().toString(36).substr(2, 9);
-
-    players[id] = {
-        x: 0,
-        y: 0,
-        z: 0,
-        rx: 0,
-        ry: 0,
-        rz: 0,
-        lastSeen: Date.now(),
-        logged: false,
-        userId: null,
-        email: null
-    };
-
-    ws.send(JSON.stringify({
-        type: "snapshot",
-        id: id,
-        data: players
-    }));
+    let logged = false;
+    let id = null;
 
     ws.on("message", async (msg) => {
 
-        try {
-            const data = JSON.parse(msg);
+        const data = JSON.parse(msg);
 
-            if (data.type === "login") {
+        // ---------------- LOGIN ONLY ----------------
+        if (data.type === "login") {
 
-                const { email, password } = data;
+            const user = await checkLogin(data.email, data.password);
 
-                const user = await checkLogin(email, password);
-
-                if (user) {
-
-                    players[id].logged = true;
-                    players[id].userId = user.id;
-                    players[id].email = user.email;
-
-                    ws.send(JSON.stringify({
-                        type: "login_result",
-                        success: true,
-                        id: user.id,
-                        email: user.email,
-                        nome: user.nome
-                    }));
-
-                } else {
-
-                    ws.send(JSON.stringify({
-                        type: "login_result",
-                        success: false
-                    }));
-                }
-
+            if (!user) {
+                ws.send(JSON.stringify({
+                    type: "login_result",
+                    success: false
+                }));
                 return;
             }
 
-            if (data.type === "update") {
+            logged = true;
+            id = Math.random().toString(36).substr(2, 9);
 
-                const p = data.data;
-                if (!players[id]) return;
+            players[id] = {
+                x: 0, y: 0, z: 0,
+                rx: 0, ry: 0, rz: 0,
+                lastSeen: Date.now(),
+                logged: true,
+                userId: user.id,
+                email: user.email
+            };
 
-                players[id].x = p.x ?? players[id].x;
-                players[id].y = p.y ?? players[id].y;
-                players[id].z = p.z ?? players[id].z;
-                players[id].rx = p.rx ?? players[id].rx;
-                players[id].ry = p.ry ?? players[id].ry;
-                players[id].rz = p.rz ?? players[id].rz;
+            ws.send(JSON.stringify({
+                type: "login_result",
+                success: true,
+                id: user.id,
+                email: user.email,
+                nome: user.nome
+            }));
 
-                players[id].lastSeen = Date.now();
-            }
+            return;
+        }
 
-        } catch (e) {
-            console.log("Erro msg:", e);
+        // ---------------- BLOCK IF NOT LOGGED ----------------
+        if (!logged) return;
+
+        // ---------------- UPDATE ONLY AFTER LOGIN ----------------
+        if (data.type === "update" && id) {
+
+            const p = data.data;
+
+            if (!players[id]) return;
+
+            players[id].x = p.x ?? players[id].x;
+            players[id].y = p.y ?? players[id].y;
+            players[id].z = p.z ?? players[id].z;
+
+            players[id].rx = p.rx ?? players[id].rx;
+            players[id].ry = p.ry ?? players[id].ry;
+            players[id].rz = p.rz ?? players[id].rz;
+
+            players[id].lastSeen = Date.now();
         }
     });
 
     ws.on("close", () => {
-        delete players[id];
+        if (id && players[id]) {
+            delete players[id];
+        }
     });
 });
 
