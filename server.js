@@ -20,7 +20,7 @@ wss.on("connection", (ws) => {
 
         if (data.menssage=="startserver"){
             ws.send(JSON.stringify({
-                menssage:"server connected"
+                menssage:"serverconnected"
             }))
         }
     
