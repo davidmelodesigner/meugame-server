@@ -28,7 +28,7 @@ wss.on("connection", (ws) => {
         }
 
         if (data.menssage === "login") {
-            logout(ws, data);
+            loginserver(ws, data);
         }
 
         if (data.menssage === "quitserver") {
