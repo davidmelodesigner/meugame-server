@@ -40,10 +40,7 @@ module.exports = function loginserver(ws, data) {
                     email: email
                 }));
 
-            } else {
-
-                console.log("LOGIN FAILED");
-
+            } else {    
                 ws.send(JSON.stringify({
                     message: "loginfailed"
                 }));
@@ -51,9 +48,6 @@ module.exports = function loginserver(ws, data) {
             }
 
         } catch (err) {
-
-            console.log("Erro login:", err);
-
             ws.send(JSON.stringify({
                 message: "servererror"
             }));
