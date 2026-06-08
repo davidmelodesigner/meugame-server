@@ -13,12 +13,7 @@ const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
 
-    console.log("cliente conectado");
-
-    ws.send(JSON.stringify({
-        type: "test",
-        message: "ok conectado"
-    }));
+    console.log("cliente conectado");    
 
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
