@@ -9,9 +9,6 @@ app.get("/", (req, res) => {
     res.send("Servidor online OK");
 });
 
-// --------------------
-// POSTGRES (NEON)
-// --------------------
 const pool = new Pool({
     connectionString: "postgresql://neondb_owner:npg_qUTQ3o4esZjF@ep-sparkling-pond-apv9ip8u-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require",
     ssl: { rejectUnauthorized: false }
@@ -22,9 +19,6 @@ const wss = new WebSocket.Server({ server });
 
 let players = {};
 
-// ---------------------------
-// LOGIN FUNCTION
-// ---------------------------
 async function checkLogin(email, password) {
     try {
         const result = await pool.query(
@@ -32,17 +26,13 @@ async function checkLogin(email, password) {
             [email, password]
         );
 
-        return result.rows.length > 0;
-
+        return result.rows.length > 0 ? result.rows[0] : null;
     } catch (err) {
         console.log("Erro login:", err);
-        return false;
+        return null;
     }
 }
 
-// ---------------------------
-// BROADCAST
-// ---------------------------
 setInterval(() => {
     const data = JSON.stringify({
         type: "players",
@@ -57,9 +47,6 @@ setInterval(() => {
 
 }, 66);
 
-// ---------------------------
-// CLEANUP
-// ---------------------------
 setInterval(() => {
     const now = Date.now();
 
@@ -68,12 +55,8 @@ setInterval(() => {
             delete players[id];
         }
     }
-
 }, 1000);
 
-// ---------------------------
-// CONNECTION
-// ---------------------------
 wss.on("connection", (ws) => {
 
     const id = Math.random().toString(36).substr(2, 9);
@@ -86,7 +69,9 @@ wss.on("connection", (ws) => {
         ry: 0,
         rz: 0,
         lastSeen: Date.now(),
-        logged: false
+        logged: false,
+        userId: null,
+        email: null
     };
 
     ws.send(JSON.stringify({
@@ -95,44 +80,50 @@ wss.on("connection", (ws) => {
         data: players
     }));
 
-    // ---------------------------
-    // MESSAGE
-    // ---------------------------
     ws.on("message", async (msg) => {
 
         try {
             const data = JSON.parse(msg);
 
-            // ---------------- LOGIN ----------------
             if (data.type === "login") {
 
                 const { email, password } = data;
 
-                const ok = await checkLogin(email, password);
+                const user = await checkLogin(email, password);
 
-                ws.send(JSON.stringify({
-                    type: "login_result",
-                    success: ok
-                }));
+                if (user) {
 
-                if (ok) {
                     players[id].logged = true;
+                    players[id].userId = user.id;
+                    players[id].email = user.email;
+
+                    ws.send(JSON.stringify({
+                        type: "login_result",
+                        success: true,
+                        id: user.id,
+                        email: user.email,
+                        nome: user.nome
+                    }));
+
+                } else {
+
+                    ws.send(JSON.stringify({
+                        type: "login_result",
+                        success: false
+                    }));
                 }
 
                 return;
             }
 
-            // ---------------- UPDATE ----------------
             if (data.type === "update") {
 
                 const p = data.data;
-
                 if (!players[id]) return;
 
                 players[id].x = p.x ?? players[id].x;
                 players[id].y = p.y ?? players[id].y;
                 players[id].z = p.z ?? players[id].z;
-
                 players[id].rx = p.rx ?? players[id].rx;
                 players[id].ry = p.ry ?? players[id].ry;
                 players[id].rz = p.rz ?? players[id].rz;
