@@ -17,6 +17,12 @@ wss.on("connection", (ws) => {
 
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
+
+        if (data.menssage=="startserver"){
+            ws.send(JSON.stringify({
+                menssage:"server connected"
+            }))
+        }
     
         if (data.menssage === "quitserver") {
             ws.send(JSON.stringify({
