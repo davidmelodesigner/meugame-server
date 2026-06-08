@@ -3,7 +3,7 @@ const http = require("http");
 const WebSocket = require("ws");
 
 const logout = require("./logout");
-contt loginserver = require("/loginserver");
+const loginserver = require("/loginserver");
 
 const app = express();
 
