@@ -29,9 +29,18 @@ async function checkLogin(email, password) {
 }
 
 function broadcastPlayers() {
+
+    const filtered = {};
+
+    for (const id in players) {
+        if (players[id].logged) {
+            filtered[id] = players[id];
+        }
+    }
+
     const data = JSON.stringify({
         type: "players",
-        data: players
+        data: filtered
     });
 
     wss.clients.forEach(client => {
