@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const callconfigs = require("./config");
 
 const pool = new Pool({
     connectionString: callconfigs('postgre'),
