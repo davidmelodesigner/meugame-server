@@ -5,7 +5,7 @@ const WebSocket = require("ws");
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("OK");
+    res.send("Servidor online OK");
 });
 
 const server = http.createServer(app);
@@ -15,12 +15,21 @@ wss.on("connection", (ws) => {
 
     console.log("cliente conectado");
 
-    // 👇 evento de teste enviado automaticamente
     ws.send(JSON.stringify({
         type: "test",
-        message: "server funcionando"
+        message: "ok conectado"
     }));
+
+    ws.on("message", (msg) => {
+        console.log("msg:", msg.toString());
+    });
+
+    ws.on("close", () => {
+        console.log("cliente saiu");
+    });
 
 });
 
-server.listen(3000);
+server.listen(process.env.PORT || 3000, () => {
+    console.log("Servidor online");
+});
