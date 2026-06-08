@@ -13,6 +13,14 @@ const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
 
+    console.log("cliente conectado");
+
+    // 👇 evento de teste enviado automaticamente
+    ws.send(JSON.stringify({
+        type: "test",
+        message: "server funcionando"
+    }));
+
 });
 
 server.listen(3000);
