@@ -23,10 +23,9 @@ wss.on("connection", (ws) => {
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
     
-        if (data.teste === "msgteste") {
+        if (data.menssage === "quitserver") {
             ws.send(JSON.stringify({
-                type: "resposta_teste",
-                message: "recebi seu teste"
+               message: "quitgame"
             }));
         }
     });
