@@ -23,7 +23,7 @@ const wss = new WebSocket.Server({ server });
 let players = {};
 
 // ---------------------------
-// LOGIN FUNCTION
+// LOGIN FUNCTION (RETORNA USER)
 // ---------------------------
 async function checkLogin(email, password) {
     try {
@@ -32,15 +32,20 @@ async function checkLogin(email, password) {
             [email, password]
         );
 
-        return result.rows.length > 0;
+        if (result.rows.length > 0) {
+            return result.rows[0];
+        }
+
+        return null;
+
     } catch (err) {
         console.log("Erro login:", err);
-        return false;
+        return null;
     }
 }
 
 // ---------------------------
-// BROADCAST
+// BROADCAST PLAYERS
 // ---------------------------
 setInterval(() => {
     const data = JSON.stringify({
@@ -57,7 +62,7 @@ setInterval(() => {
 }, 66);
 
 // ---------------------------
-// CLEANUP
+// CLEANUP (REMOVE INATIVOS)
 // ---------------------------
 setInterval(() => {
     const now = Date.now();
@@ -70,19 +75,26 @@ setInterval(() => {
 }, 1000);
 
 // ---------------------------
-// CONNECTION
+// WEBSOCKET CONNECTION
 // ---------------------------
 wss.on("connection", (ws) => {
 
     const id = Math.random().toString(36).substr(2, 9);
 
     players[id] = {
-        x: 0, y: 0, z: 0,
-        rx: 0, ry: 0, rz: 0,
+        x: 0,
+        y: 0,
+        z: 0,
+        rx: 0,
+        ry: 0,
+        rz: 0,
         lastSeen: Date.now(),
-        logged: false
+        logged: false,
+        userId: null,
+        email: null
     };
 
+    // snapshot inicial
     ws.send(JSON.stringify({
         type: "snapshot",
         id: id,
@@ -90,9 +102,10 @@ wss.on("connection", (ws) => {
     }));
 
     // ---------------------------
-    // MESSAGE
+    // MESSAGE HANDLER
     // ---------------------------
     ws.on("message", async (msg) => {
+
         try {
             const data = JSON.parse(msg);
 
@@ -101,21 +114,34 @@ wss.on("connection", (ws) => {
 
                 const { email, password } = data;
 
-                const ok = await checkLogin(email, password);
+                const user = await checkLogin(email, password);
 
-                ws.send(JSON.stringify({
-                    type: "login_result",
-                    success: ok
-                }));
+                if (user) {
 
-                if (ok) {
                     players[id].logged = true;
+                    players[id].userId = user.id;
+                    players[id].email = user.email;
+
+                    ws.send(JSON.stringify({
+                        type: "login_result",
+                        success: true,
+                        id: user.id,
+                        email: user.email,
+                        nome: user.nome
+                    }));
+
+                } else {
+
+                    ws.send(JSON.stringify({
+                        type: "login_result",
+                        success: false
+                    }));
                 }
 
                 return;
             }
 
-            // ---------------- UPDATE ----------------
+            // ---------------- UPDATE PLAYER ----------------
             if (data.type === "update") {
 
                 const p = data.data;
@@ -142,6 +168,9 @@ wss.on("connection", (ws) => {
     });
 });
 
+// ---------------------------
+// START SERVER
+// ---------------------------
 server.listen(process.env.PORT || 3000, () => {
     console.log("Servidor online");
 });
