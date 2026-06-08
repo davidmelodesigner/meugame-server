@@ -27,6 +27,10 @@ wss.on("connection", (ws) => {
             }));
         }
 
+        if (data.menssage === "login") {
+            logout(ws, data);
+        }
+
         if (data.menssage === "quitserver") {
             logout(ws, data);
         }
