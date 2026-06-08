@@ -9,12 +9,15 @@ app.get("/", (req, res) => {
     res.send("Servidor online OK");
 });
 
-// --------------------
-// POSTGRES (NEON)
-// --------------------
 const pool = new Pool({
     connectionString: "postgresql://neondb_owner:npg_qUTQ3o4esZjF@ep-sparkling-pond-apv9ip8u-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require",
-    ssl: { rejectUnauthorized: false }
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000
+});
+
+pool.on("error", (err) => {
+    console.log("ERRO POOL:", err);
 });
 
 const server = http.createServer(app);
@@ -22,15 +25,18 @@ const wss = new WebSocket.Server({ server });
 
 let players = {};
 
-// ---------------------------
-// LOGIN FUNCTION (RETORNA USER)
-// ---------------------------
+// ---------------- LOGIN ----------------
 async function checkLogin(email, password) {
+
     try {
+        console.log("LOGIN REQUEST:", email, password);
+
         const result = await pool.query(
             "SELECT * FROM users WHERE email = $1 AND password = $2",
             [email, password]
         );
+
+        console.log("RESULT ROWS:", result.rows);
 
         if (result.rows.length > 0) {
             return result.rows[0];
@@ -39,14 +45,12 @@ async function checkLogin(email, password) {
         return null;
 
     } catch (err) {
-        console.log("Erro login:", err);
+        console.log("ERRO LOGIN SQL:", err);
         return null;
     }
 }
 
-// ---------------------------
-// BROADCAST PLAYERS
-// ---------------------------
+// ---------------- BROADCAST ----------------
 setInterval(() => {
     const data = JSON.stringify({
         type: "players",
@@ -61,9 +65,7 @@ setInterval(() => {
 
 }, 66);
 
-// ---------------------------
-// CLEANUP (REMOVE INATIVOS)
-// ---------------------------
+// ---------------- CLEANUP ----------------
 setInterval(() => {
     const now = Date.now();
 
@@ -74,47 +76,38 @@ setInterval(() => {
     }
 }, 1000);
 
-// ---------------------------
-// WEBSOCKET CONNECTION
-// ---------------------------
+// ---------------- CONNECTION ----------------
 wss.on("connection", (ws) => {
 
     const id = Math.random().toString(36).substr(2, 9);
 
     players[id] = {
-        x: 0,
-        y: 0,
-        z: 0,
-        rx: 0,
-        ry: 0,
-        rz: 0,
+        x: 0, y: 0, z: 0,
+        rx: 0, ry: 0, rz: 0,
         lastSeen: Date.now(),
         logged: false,
         userId: null,
         email: null
     };
 
-    // snapshot inicial
     ws.send(JSON.stringify({
         type: "snapshot",
         id: id,
         data: players
     }));
 
-    // ---------------------------
-    // MESSAGE HANDLER
-    // ---------------------------
     ws.on("message", async (msg) => {
 
         try {
             const data = JSON.parse(msg);
 
-            // ---------------- LOGIN ----------------
             if (data.type === "login") {
 
-                const { email, password } = data;
+                console.log("LOGIN RECEBIDO:", data);
 
-                const user = await checkLogin(email, password);
+                const user = await checkLogin(data.email, data.password);
+
+                console.log("USER FOUND:", user);
 
                 if (user) {
 
@@ -141,7 +134,6 @@ wss.on("connection", (ws) => {
                 return;
             }
 
-            // ---------------- UPDATE PLAYER ----------------
             if (data.type === "update") {
 
                 const p = data.data;
@@ -159,7 +151,7 @@ wss.on("connection", (ws) => {
             }
 
         } catch (e) {
-            console.log("Erro msg:", e);
+            console.log("ERRO MESSAGE:", e);
         }
     });
 
@@ -168,9 +160,6 @@ wss.on("connection", (ws) => {
     });
 });
 
-// ---------------------------
-// START SERVER
-// ---------------------------
 server.listen(process.env.PORT || 3000, () => {
     console.log("Servidor online");
 });
