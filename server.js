@@ -27,11 +27,11 @@ wss.on("connection", (ws) => {
             }));
         }
 
-        if (data.menssage === "login") {
+        if (data.message === "login") {
             loginserver(ws, data);
         }
 
-        if (data.menssage === "quitserver") {
+        if (data.message === "quitserver") {
             logout(ws, data);
         }
     });
