@@ -1,10 +1,20 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
+const { Pool } = require("pg");
+
 const app = express();
 
 app.get("/", (req, res) => {
     res.send("Servidor online OK");
+});
+
+// --------------------
+// POSTGRES (NEON)
+// --------------------
+const pool = new Pool({
+    connectionString: "postgresql://neondb_owner:npg_qUTQ3o4esZjF@ep-sparkling-pond-apv9ip8u-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require",
+    ssl: { rejectUnauthorized: false }
 });
 
 const server = http.createServer(app);
@@ -13,7 +23,24 @@ const wss = new WebSocket.Server({ server });
 let players = {};
 
 // ---------------------------
-// BROADCAST (STREAM FIXO)
+// LOGIN FUNCTION
+// ---------------------------
+async function checkLogin(email, password) {
+    try {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1 AND password = $2",
+            [email, password]
+        );
+
+        return result.rows.length > 0;
+    } catch (err) {
+        console.log("Erro login:", err);
+        return false;
+    }
+}
+
+// ---------------------------
+// BROADCAST
 // ---------------------------
 setInterval(() => {
     const data = JSON.stringify({
@@ -27,21 +54,19 @@ setInterval(() => {
         }
     });
 
-}, 66); // ~15x por segundo (mais estável que 20x)
+}, 66);
 
 // ---------------------------
-// CLEANUP (ANTI-FANTASMA)
+// CLEANUP
 // ---------------------------
 setInterval(() => {
     const now = Date.now();
 
     for (const id in players) {
         if (now - players[id].lastSeen > 5000) {
-            console.log("Removendo player inativo:", id);
             delete players[id];
         }
     }
-
 }, 1000);
 
 // ---------------------------
@@ -51,23 +76,13 @@ wss.on("connection", (ws) => {
 
     const id = Math.random().toString(36).substr(2, 9);
 
-    console.log("Jogador conectado:", id);
-
     players[id] = {
-        x: 0,
-        y: 0,
-        z: 0,
-
-        rx: 0,
-        ry: 0,
-        rz: 0,
-
-        lastSeen: Date.now()
+        x: 0, y: 0, z: 0,
+        rx: 0, ry: 0, rz: 0,
+        lastSeen: Date.now(),
+        logged: false
     };
 
-    // ---------------------------
-    // SNAPSHOT INICIAL
-    // ---------------------------
     ws.send(JSON.stringify({
         type: "snapshot",
         id: id,
@@ -77,14 +92,33 @@ wss.on("connection", (ws) => {
     // ---------------------------
     // MESSAGE
     // ---------------------------
-    ws.on("message", (msg) => {
+    ws.on("message", async (msg) => {
         try {
             const data = JSON.parse(msg);
 
+            // ---------------- LOGIN ----------------
+            if (data.type === "login") {
+
+                const { email, password } = data;
+
+                const ok = await checkLogin(email, password);
+
+                ws.send(JSON.stringify({
+                    type: "login_result",
+                    success: ok
+                }));
+
+                if (ok) {
+                    players[id].logged = true;
+                }
+
+                return;
+            }
+
+            // ---------------- UPDATE ----------------
             if (data.type === "update") {
 
                 const p = data.data;
-
                 if (!players[id]) return;
 
                 players[id].x = p.x ?? players[id].x;
@@ -98,14 +132,12 @@ wss.on("connection", (ws) => {
                 players[id].lastSeen = Date.now();
             }
 
-        } catch (e) {}
+        } catch (e) {
+            console.log("Erro msg:", e);
+        }
     });
 
-    // ---------------------------
-    // CLOSE
-    // ---------------------------
     ws.on("close", () => {
-        console.log("Player desconectado:", id);
         delete players[id];
     });
 });
