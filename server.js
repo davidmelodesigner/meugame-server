@@ -21,7 +21,14 @@ wss.on("connection", (ws) => {
     }));
 
     ws.on("message", (msg) => {
-        console.log("msg:", msg.toString());
+        const data = JSON.parse(msg.toString());
+    
+        if (data.teste === "msgteste") {
+            ws.send(JSON.stringify({
+                type: "resposta_teste",
+                message: "recebi seu teste"
+            }));
+        }
     });
 
     ws.on("close", () => {
