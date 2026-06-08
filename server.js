@@ -2,6 +2,8 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 
+const logout = require("./logout");
+
 const app = express();
 
 app.get("/", (req, res) => {
@@ -13,21 +15,19 @@ const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
 
-    console.log("cliente conectado");    
+    console.log("cliente conectado");
 
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
 
-        if (data.menssage=="startserver"){
+        if (data.menssage == "startserver") {
             ws.send(JSON.stringify({
-                message:"serverconnected"
-            }))
-        }
-    
-        if (data.menssage === "quitserver") {
-            ws.send(JSON.stringify({
-               message: "quitgame"
+                message: "serverconnected"
             }));
+        }
+
+        if (data.menssage === "quitserver") {
+            logout(ws, data);
         }
     });
 
