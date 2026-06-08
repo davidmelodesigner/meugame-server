@@ -11,13 +11,7 @@ app.get("/", (req, res) => {
 
 const pool = new Pool({
     connectionString: "postgresql://neondb_owner:npg_qUTQ3o4esZjF@ep-sparkling-pond-apv9ip8u-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require",
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000
-});
-
-pool.on("error", (err) => {
-    console.log("ERRO POOL:", err);
+    ssl: { rejectUnauthorized: false }
 });
 
 const server = http.createServer(app);
@@ -25,18 +19,12 @@ const wss = new WebSocket.Server({ server });
 
 let players = {};
 
-// ---------------- LOGIN ----------------
 async function checkLogin(email, password) {
-
     try {
-        console.log("LOGIN REQUEST:", email, password);
-
         const result = await pool.query(
             "SELECT * FROM users WHERE email = $1 AND password = $2",
             [email, password]
         );
-
-        console.log("RESULT ROWS:", result.rows);
 
         if (result.rows.length > 0) {
             return result.rows[0];
@@ -45,12 +33,11 @@ async function checkLogin(email, password) {
         return null;
 
     } catch (err) {
-        console.log("ERRO LOGIN SQL:", err);
+        console.log("Erro login:", err);
         return null;
     }
 }
 
-// ---------------- BROADCAST ----------------
 setInterval(() => {
     const data = JSON.stringify({
         type: "players",
@@ -62,10 +49,8 @@ setInterval(() => {
             client.send(data);
         }
     });
-
 }, 66);
 
-// ---------------- CLEANUP ----------------
 setInterval(() => {
     const now = Date.now();
 
@@ -76,14 +61,17 @@ setInterval(() => {
     }
 }, 1000);
 
-// ---------------- CONNECTION ----------------
 wss.on("connection", (ws) => {
 
     const id = Math.random().toString(36).substr(2, 9);
 
     players[id] = {
-        x: 0, y: 0, z: 0,
-        rx: 0, ry: 0, rz: 0,
+        x: 0,
+        y: 0,
+        z: 0,
+        rx: 0,
+        ry: 0,
+        rz: 0,
         lastSeen: Date.now(),
         logged: false,
         userId: null,
@@ -97,17 +85,12 @@ wss.on("connection", (ws) => {
     }));
 
     ws.on("message", async (msg) => {
-
         try {
             const data = JSON.parse(msg);
 
             if (data.type === "login") {
 
-                console.log("LOGIN RECEBIDO:", data);
-
                 const user = await checkLogin(data.email, data.password);
-
-                console.log("USER FOUND:", user);
 
                 if (user) {
 
@@ -151,7 +134,7 @@ wss.on("connection", (ws) => {
             }
 
         } catch (e) {
-            console.log("ERRO MESSAGE:", e);
+            console.log("Erro msg:", e);
         }
     });
 
