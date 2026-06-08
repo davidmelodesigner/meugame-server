@@ -21,8 +21,6 @@ const pool = new Pool({
 
 module.exports = function loginserver(ws, data) {
 
-    console.log("CONNECTING USER:", data.email);
-
     async function checkLogin(email, password) {
 
         try {
