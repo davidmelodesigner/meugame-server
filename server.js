@@ -4,6 +4,7 @@ const WebSocket = require("ws");
 
 const logout = require("./logout");
 const loginserver = require("./loginserver");
+const configs = require("./config");
 
 const app = express();
 
