@@ -1,15 +1,18 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
-const { Pool } = require("pg");
 
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("Servidor online OK");
+    res.send("OK");
 });
 
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
-server.listen(process.env.PORT || 3000, () => {
-    console.log("Servidor online");
+wss.on("connection", (ws) => {
+
 });
+
+server.listen(3000);
