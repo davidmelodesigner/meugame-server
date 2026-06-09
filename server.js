@@ -8,44 +8,14 @@ const callconfigs = require("./config");
 const userlogued = require("./userslogued");
 const inicServer = require("./inicServer");
 const homepage = require("./home");
+const connectserver = require("./connectserver");
 
 const app = express();
-
-app.get("/", (req, res) => {
-    res.send("Servidor online OK");
-});
-
-app.get("/home", (req, res) => {
-    homepage(req, res);
-});
-
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-wss.on("connection", (ws) => {
-
-    ws.on("message", (msg) => {
-        const data = JSON.parse(msg.toString());
-        if (data.message == "startserver") {
-            inicServer(ws, data);
-        }
-
-        if (data.message == "getusers") {
-            userlogued(ws, data);
-        }
-
-        if (data.message === "login") {
-            loginserver(ws, data);
-        }
-
-        if (data.message === "quitserver") {
-            logout(ws, data);
-            
-        }
-    });
-
-    
-
+app.get("/", (req, res) => {
+    homepage(req, res);
 });
 
 server.listen(process.env.PORT || 3000, () => {
