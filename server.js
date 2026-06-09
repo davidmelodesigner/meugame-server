@@ -6,6 +6,7 @@ const logout = require("./logout");
 const loginserver = require("./loginserver");
 const callconfigs = require("./config");
 const userlogued = require("./userslogued");
+const inicServer = require("./inicServer");
 
 const app = express();
 
@@ -22,8 +23,11 @@ wss.on("connection", (ws) => {
 
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
-
         if (data.message == "startserver") {
+            inicServer(ws, data);
+        }
+
+        if (data.message == "getusers") {
             userlogued(ws, data);
         }
 
