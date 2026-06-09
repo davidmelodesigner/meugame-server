@@ -7,7 +7,7 @@ const loginserver = require("./loginserver");
 const callconfigs = require("./config");
 const userlogued = require("./userslogued");
 const inicServer = require("./inicServer");
-const inicServer = require("./home");
+const homepage = require("./home");
 
 const app = express();
 
