@@ -15,6 +15,10 @@ app.get("/", (req, res) => {
     res.send("Servidor online OK");
 });
 
+app.get("/home", (req, res) => {
+   homepage(ws, data);
+});
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
