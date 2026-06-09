@@ -2,39 +2,46 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 
-const inicServer = require("./inicServer");
-const loginserver = require("./loginserver");
 const logout = require("./logout");
+const loginserver = require("./loginserver");
+const callconfigs = require("./config");
+const userlogued = require("./userslogued");
+const inicServer = require("./inicServer");
+const inicServer = require("./home");
 
 const app = express();
+
+app.get("/", (req, res) => {
+    res.send("Servidor online OK");
+});
+
+app.get("/home", (req, res) => {
+    homepage(ws, data);
+});
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
-
     ws.on("message", (msg) => {
-
         const data = JSON.parse(msg.toString());
 
-        switch (data.message) {
-
-            case "startserver":
-                app.get("/inicserver", (req, res) => {
-                    inicServer(req, data);
-                });
-                break;
-
-            case "login":
-                loginserver(ws, data);
-                break;
-
-            case "quitserver":
-                logout(ws, data);
-                break;
+        if (data.message == "startserver") {
+            inicServer(ws, data);
         }
 
-    });
+        if (data.message == "getusers") {
+            userlogued(ws, data);
+        }
 
+        if (data.message === "login") {
+            loginserver(ws, data);
+        }
+
+        if (data.message === "quitserver") {
+            logout(ws, data);
+        }
+    });
 });
 
 server.listen(process.env.PORT || 3000, () => {
