@@ -37,7 +37,7 @@ wss.on("connection", (ws) => {
         }
 
         if (data.message === "senduserid") {
-            userslogued(ws, data);
+            userlogued(ws, data);
         }
 
         if (data.message === "quitserver") {
