@@ -19,8 +19,6 @@ const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
 
-    console.log("cliente conectado");
-
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
         if (data.message == "startserver") {
@@ -37,12 +35,11 @@ wss.on("connection", (ws) => {
 
         if (data.message === "quitserver") {
             logout(ws, data);
+            
         }
     });
 
-    ws.on("close", () => {
-        console.log("cliente saiu");
-    });
+    
 
 });
 
