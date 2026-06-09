@@ -10,5 +10,5 @@ const pool = new Pool({
 module.exports = function userlogued(ws, data) {
   ws.send(JSON.stringify({
     "message":"userconected"
-  });
+  }));
 };
