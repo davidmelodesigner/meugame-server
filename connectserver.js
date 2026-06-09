@@ -1,7 +1,18 @@
-module.exports = function connectserver(req, res) {
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
-    ws.send(JSON.stringify({
-        message: "serverconnected"
-    }));
+module.exports = function connectserver(req, res) {
+    wss.on("connection", (ws) => {
+
+            ws.on("message", (msg) => {
+                const data = JSON.parse(msg.toString());
+                if (data.message == "startserver") {
+                    inicServer(ws, data);
+                }
+            });
+        
+            
+        
+        });
 
 };
