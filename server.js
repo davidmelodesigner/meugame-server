@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/home", (req, res) => {
-   homepage(ws, data);
+    homepage(req, res);
 });
 
 const server = http.createServer(app);
