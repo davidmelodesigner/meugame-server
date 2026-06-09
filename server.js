@@ -1,28 +1,40 @@
 const express = require("express");
 const http = require("http");
+const WebSocket = require("ws");
 
-const logout = require("./logout");
-const loginserver = require("./loginserver");
-const callconfigs = require("./config");
-const userlogued = require("./userslogued");
 const inicServer = require("./inicServer");
-const homepage = require("./home");
-const connectserver = require("./connectserver");
+const loginserver = require("./loginserver");
+const logout = require("./logout");
 
 const app = express();
-
-app.get("/", (req, res) => {
-    homepage(req, res);
-});
-
-app.get("/inicserver", (req, res) => {
-    inicServer(req, res);
-});
-
 const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+wss.on("connection", (ws) => {
+
+    ws.on("message", (msg) => {
+
+        const data = JSON.parse(msg.toString());
+
+        switch (data.message) {
+
+            case "startserver":
+                inicServer(ws, data);
+                break;
+
+            case "login":
+                loginserver(ws, data);
+                break;
+
+            case "quitserver":
+                logout(ws, data);
+                break;
+        }
+
+    });
+
+});
 
 server.listen(process.env.PORT || 3000, () => {
-    ws.send(JSON.stringify({
-        message: "serverconnected"
-    }));
+    console.log("Servidor online");
 });
