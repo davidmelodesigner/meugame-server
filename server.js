@@ -22,5 +22,7 @@ app.get("/inicserver", (req, res) => {
 const server = http.createServer(app);
 
 server.listen(process.env.PORT || 3000, () => {
-    console.log("Servidor online");
+    ws.send(JSON.stringify({
+        message: "serverconnected"
+    }));
 });
