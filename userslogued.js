@@ -7,7 +7,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-module.exports = function userlogued(ws, data) {
+module.exports = function userslogued(ws, data) {
   ws.send(JSON.stringify({
     "message":"userconected"
   }));
