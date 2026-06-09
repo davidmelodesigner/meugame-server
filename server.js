@@ -5,6 +5,7 @@ const WebSocket = require("ws");
 const logout = require("./logout");
 const loginserver = require("./loginserver");
 const callconfigs = require("./config");
+const userlogued = require("./userslogued");
 
 const app = express();
 
@@ -23,9 +24,7 @@ wss.on("connection", (ws) => {
         const data = JSON.parse(msg.toString());
 
         if (data.message == "startserver") {
-            ws.send(JSON.stringify({
-                message: "serverconnected"
-            }));
+            userlogued(ws, data);
         }
 
         if (data.message === "login") {
