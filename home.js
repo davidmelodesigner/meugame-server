@@ -1,11 +1,7 @@
 module.exports = function homepage(req, res) {
 
-```
-res.send(`
-```
-
+    res.send(`
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -89,7 +85,6 @@ button:hover{
 
 <div class="container">
 
-```
 <h1>🎮 Nosso Game</h1>
 
 <div class="card">
@@ -113,7 +108,6 @@ button:hover{
 
     <p id="msg" style="margin-top:20px;"></p>
 </div>
-```
 
 </div>
 
@@ -129,4 +123,3 @@ function showMessage(){
     `);
 
 };
-
