@@ -1,5 +1,7 @@
 module.exports = function connectserver(req, res) {
 
-    res.send(`teste`);
+    ws.send(JSON.stringify({
+        message: "serverconnected"
+    }));
 
 };
