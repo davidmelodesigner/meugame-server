@@ -19,7 +19,9 @@ wss.on("connection", (ws) => {
         switch (data.message) {
 
             case "startserver":
-                inicServer(ws, data);
+                app.get("/inicserver", (req, res) => {
+                    inicServer(req, res);
+                });
                 break;
 
             case "login":
