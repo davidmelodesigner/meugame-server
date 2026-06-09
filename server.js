@@ -16,7 +16,7 @@ app.get("/connectserver", (req, res) => {
     connectserver(req, res);
 });
 
-app.get("/home", (req, res) => {
+app.get("/", (req, res) => {
     homepage(req, res);
 });
 
