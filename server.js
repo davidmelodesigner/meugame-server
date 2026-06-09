@@ -20,7 +20,7 @@ wss.on("connection", (ws) => {
 
             case "startserver":
                 app.get("/inicserver", (req, res) => {
-                    inicServer(req, res);
+                    inicServer(req, data);
                 });
                 break;
 
