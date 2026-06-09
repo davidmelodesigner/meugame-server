@@ -9,6 +9,7 @@ const userlogued = require("./userslogued");
 const inicServer = require("./inicServer");
 const homepage = require("./home");
 const connectserver = require("./connectserver");
+const useronline = require("./useronline");
 
 const app = express();
 
@@ -34,6 +35,10 @@ wss.on("connection", (ws) => {
 
         if (data.message === "login") {
             loginserver(ws, data);
+        }
+
+        if (data.message === "senduserid") {
+            useronline(ws, data);
         }
 
         if (data.message === "quitserver") {
