@@ -9,7 +9,10 @@ function handlePlayerUpdate(ws, data) {
 
     const userId = data.userid;
 
-    if (!userId) return;
+    if (!userId) {
+        console.log("PLAYERUPDATE SEM USERID");
+        return;
+    }
 
     ws.userId = userId;
     onlineUsers.set(userId, ws);
@@ -24,6 +27,8 @@ function handlePlayerUpdate(ws, data) {
         ry: data.ry,
         rz: data.rz
     };
+
+    console.log("ENVIANDO PRO UPBGE:", payload);
 
     ws.send(JSON.stringify(payload));
 }
