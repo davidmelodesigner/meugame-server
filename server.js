@@ -46,7 +46,7 @@ wss.on("connection", (ws) => {
             
         }
         if (data.message === "playerupdate") {
-            playerupdate(ws, data);
+            playerupdate.handlePlayerUpdate(ws, data);
             
         }
     });
