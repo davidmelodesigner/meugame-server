@@ -4,11 +4,9 @@ const WebSocket = require("ws");
 
 const logout = require("./logout");
 const loginserver = require("./loginserver");
-const callconfigs = require("./config");
 const userlogued = require("./userslogued");
 const inicServer = require("./inicServer");
 const homepage = require("./home");
-const connectserver = require("./connectserver");
 const playerupdate = require("./playerupdate");
 
 const app = express();
@@ -19,6 +17,9 @@ app.get("/", (req, res) => {
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+
+/* 💥 ESTADO DO MUNDO (FALTAVA ISSO) */
+const players = {};
 
 wss.on("connection", (ws) => {
 
@@ -43,24 +44,60 @@ wss.on("connection", (ws) => {
             loginserver(ws, data);
         }
 
+        /* 💥 LOGIN / ID */
         if (data.message === "senduserid") {
+            ws.userId = data.userid;
             userlogued(ws, data);
+        }
+
+        /* 💥 ENTRAR NA CENA (SNAPSHOT) */
+        if (data.message === "enterworld") {
+
+            ws.userId = data.userid;
+
+            ws.send(JSON.stringify({
+                message: "snapshot_players",
+                players: Object.values(players)
+            }));
+
+            return;
         }
 
         if (data.message === "quitserver") {
             logout(ws, data, wss);
+            delete players[ws.userId];
         }
 
+        /* 💥 PLAYER UPDATE */
         if (data.message === "playerupdate") {
+
+            /* SALVA ESTADO GLOBAL */
+            players[data.userid] = data;
+
+            /* BROADCAST */
             playerupdate(ws, data, wss);
         }
     });
 
     ws.on("close", () => {
         ws.isAlive = false;
+
+        if (ws.userId) {
+            delete players[ws.userId];
+
+            wss.clients.forEach(client => {
+                if (client.readyState === 1) {
+                    client.send(JSON.stringify({
+                        message: "userdisconnect",
+                        userid: ws.userId
+                    }));
+                }
+            });
+        }
     });
 });
 
+/* 💥 HEARTBEAT */
 setInterval(() => {
 
     wss.clients.forEach(ws => {
@@ -68,7 +105,7 @@ setInterval(() => {
         if (ws.isAlive === false) {
 
             if (ws.userId) {
-                console.log("TIMEOUT REMOVE:", ws.userId);
+                delete players[ws.userId];
 
                 wss.clients.forEach(client => {
                     if (client.readyState === 1) {
