@@ -13,7 +13,7 @@ module.exports = function playerupdate(ws, data, wss) {
 
     wss.clients.forEach(client => {
 
-        if (client.readyState === 1) {
+        if (client.readyState === 1 && client !== ws) {
             client.send(payload);
         }
 
