@@ -1,4 +1,4 @@
-module.exports = function inicServer(ws, data) {
+module.exports = function playerupdate(ws, data,wss) {
 
     console.log("CLIENT CONNECTED");
     const payload = JSON.stringify({
