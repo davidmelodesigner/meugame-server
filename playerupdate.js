@@ -19,7 +19,7 @@ module.exports = function inicServer(ws, data) {
     });
     ws.send(JSON.stringify({
         message: "playerupdate_echo",
-        data:data
+        data:payload
     }));
 
 };
