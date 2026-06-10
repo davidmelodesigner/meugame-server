@@ -15,7 +15,7 @@ function handlePlayerUpdate(ws, data) {
     onlineUsers.set(userId, ws);
 
     const payload = {
-        message: "updateplayer",
+        message: "playerupdate_echo",
         userid: userId,
         x: data.x,
         y: data.y,
@@ -25,13 +25,7 @@ function handlePlayerUpdate(ws, data) {
         rz: data.rz
     };
 
-    for (const [id, client] of onlineUsers) {
-        if (id === userId) continue;
-
-        if (client.readyState === 1) {
-            client.send(JSON.stringify(payload));
-        }
-    }
+    ws.send(JSON.stringify(payload));
 }
 
 module.exports = {
