@@ -13,6 +13,7 @@ const playerupdate = require("./playerupdate");
 
 const app = express();
 
+
 app.get("/", (req, res) => {
     homepage(req, res);
 });
@@ -23,25 +24,34 @@ const wss = new WebSocket.Server({ server });
 wss.on("connection", (ws) => {
 
     ws.on("message", (msg) => {
-
         const data = JSON.parse(msg.toString());
+        if (data.message == "startserver") {
+            inicServer(ws, data);
+        }
 
-        const handlers = {
-            startserver: inicServer,
-            getusers: userlogued,
-            login: loginserver,
-            senduserid: userlogued,
-            quitserver: logout,
-            playerupdate: playerupdate.handlePlayerUpdate,
-            connectserver: connectserver
-        };
+        if (data.message == "getusers") {
+            userlogued(ws, data);
+        }
 
-        const handler = handlers[data.message];
+        if (data.message === "login") {
+            loginserver(ws, data);
+        }
 
-        if (handler) {
-            handler(ws, data);
+        if (data.message === "senduserid") {
+            userlogued(ws, data);
+        }
+
+        if (data.message === "quitserver") {
+            logout(ws, data);
+            
+        }
+        if (data.message === "playerupdate") {
+            playerupdate(ws, data);
+            
         }
     });
+
+    
 
 });
 
