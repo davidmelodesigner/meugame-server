@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-/* 💥 ESTADO DO MUNDO (FALTAVA ISSO) */
+/* 💥 ESTADO DO MUNDO */
 const players = {};
 
 wss.on("connection", (ws) => {
@@ -46,35 +46,30 @@ wss.on("connection", (ws) => {
 
         /* 💥 LOGIN / ID */
         if (data.message === "senduserid") {
-            ws.userId = data.userid;
-            userlogued(ws, data);
-        }
-
-        /* 💥 ENTRAR NA CENA (SNAPSHOT) */
-        if (data.message === "enterworld") {
 
             ws.userId = data.userid;
 
+            /* 🔥 AQUI ESTAVA FALTANDO O SNAPSHOT */
             ws.send(JSON.stringify({
                 message: "snapshot_players",
                 players: Object.values(players)
             }));
 
-            return;
+            userlogued(ws, data);
         }
 
         if (data.message === "quitserver") {
             logout(ws, data, wss);
+
             delete players[ws.userId];
         }
 
         /* 💥 PLAYER UPDATE */
         if (data.message === "playerupdate") {
 
-            /* SALVA ESTADO GLOBAL */
+            /* GARANTE QUE SEMPRE EXISTE NO MUNDO */
             players[data.userid] = data;
 
-            /* BROADCAST */
             playerupdate(ws, data, wss);
         }
     });
