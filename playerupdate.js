@@ -1,6 +1,5 @@
-module.exports = function playerupdate(ws, data,wss) {
+module.exports = function playerupdate(ws, data, wss) {
 
-    console.log("CLIENT CONNECTED");
     const payload = JSON.stringify({
         message: "playerupdate_echo",
         userid: data.userid,
@@ -17,9 +16,4 @@ module.exports = function playerupdate(ws, data,wss) {
             client.send(payload);
         }
     });
-    ws.send(JSON.stringify({
-        message: "playerupdate_echo",
-        data:data
-    }));
-
 };
