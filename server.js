@@ -3,49 +3,30 @@ const http = require("http");
 const WebSocket = require("ws");
 
 const app = express();
-
-app.get("/", (req, res) => {
-    res.send("SERVER ONLINE");
-});
-
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const players = {};
 
-/* 💥 BROADCAST */
-function broadcast(data, exclude) {
-    const msg = JSON.stringify(data);
-
-    wss.clients.forEach(client => {
-        if (client !== exclude && client.readyState === 1) {
-            client.send(msg);
-        }
-    });
-}
+app.get("/", (req, res) => {
+    res.send("SERVER ONLINE");
+});
 
 wss.on("connection", (ws) => {
 
-    ws.isAlive = true;
+    console.log("PLAYER CONNECTED");
 
-    ws.on("pong", () => {
-        ws.isAlive = true;
-    });
+    ws.id = null;
 
+    // quando recebe mensagem
     ws.on("message", (msg) => {
+        const data = JSON.parse(msg.toString());
 
-        let data;
-        try {
-            data = JSON.parse(msg.toString());
-        } catch {
-            return;
-        }
-
-        /* 💥 JOIN */
+        // JOIN PLAYER
         if (data.message === "join") {
-
             ws.id = data.id;
 
+            // salva player
             players[ws.id] = {
                 id: ws.id,
                 x: 0,
@@ -53,22 +34,21 @@ wss.on("connection", (ws) => {
                 z: 0
             };
 
+            // manda snapshot
             ws.send(JSON.stringify({
                 message: "snapshot",
                 players: Object.values(players)
             }));
 
-            broadcast({
-                message: "join",
-                id: ws.id
-            }, ws);
+            return;
         }
 
-        /* 💥 UPDATE PLAYER */
+        // UPDATE POSITION
         if (data.message === "update") {
 
             if (!ws.id) return;
 
+            // atualiza mundo
             players[ws.id] = {
                 id: ws.id,
                 x: data.x,
@@ -76,60 +56,42 @@ wss.on("connection", (ws) => {
                 z: data.z
             };
 
-            broadcast({
-                message: "update",
-                id: ws.id,
-                x: data.x,
-                y: data.y,
-                z: data.z
-            }, ws);
-        }
-
-        /* 💥 LEAVE */
-        if (data.message === "leave") {
-
-            if (!ws.id) return;
-
-            delete players[ws.id];
-
-            broadcast({
-                message: "leave",
-                id: ws.id
-            }, ws);
+            // broadcast pra todos
+            wss.clients.forEach(client => {
+                if (client.readyState === 1) {
+                    client.send(JSON.stringify({
+                        message: "update",
+                        id: ws.id,
+                        x: data.x,
+                        y: data.y,
+                        z: data.z
+                    }));
+                }
+            });
         }
     });
 
+    // disconnect
     ws.on("close", () => {
 
-        if (ws.id) {
+        if (ws.id && players[ws.id]) {
+
             delete players[ws.id];
 
-            broadcast({
-                message: "leave",
-                id: ws.id
-            }, ws);
+            wss.clients.forEach(client => {
+                if (client.readyState === 1) {
+                    client.send(JSON.stringify({
+                        message: "remove",
+                        id: ws.id
+                    }));
+                }
+            });
         }
+
+        console.log("PLAYER DISCONNECTED");
     });
 });
 
-/* 💥 HEARTBEAT */
-setInterval(() => {
-
-    wss.clients.forEach(ws => {
-
-        if (!ws.isAlive) {
-            return ws.terminate();
-        }
-
-        ws.isAlive = false;
-        ws.ping();
-    });
-
-}, 5000);
-
-/* 💥 START */
-const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-    console.log("SERVER ONLINE PORT:", PORT);
+server.listen(3000, () => {
+    console.log("SERVER ONLINE PORT 3000");
 });
