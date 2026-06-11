@@ -18,9 +18,12 @@ wss.on("connection", (ws) => {
     ws.userId = null;
 
     ws.on("message", (msg) => {
+
         const data = JSON.parse(msg.toString());
 
-        // ENTRAR NO JOGO
+        // ----------------------
+        // JOIN GAME
+        // ----------------------
         if (data.message === "join") {
 
             ws.userId = data.id;
@@ -32,7 +35,7 @@ wss.on("connection", (ws) => {
                 z: 0
             };
 
-            // snapshot (igual teu sistema antigo)
+            // manda snapshot só pros novos
             ws.send(JSON.stringify({
                 message: "snapshot",
                 players: Object.values(players)
@@ -41,7 +44,9 @@ wss.on("connection", (ws) => {
             return;
         }
 
+        // ----------------------
         // UPDATE PLAYER
+        // ----------------------
         if (data.message === "update") {
 
             if (!ws.userId) return;
@@ -53,36 +58,40 @@ wss.on("connection", (ws) => {
                 z: data.z
             };
 
-            // broadcast simples
+            // manda update PRA TODOS MENOS QUEM ENVIOU
             wss.clients.forEach(client => {
-                if (client.readyState === 1) {
-                    client.send(JSON.stringify({
-                        message: "update",
-                        id: ws.userId,
-                        x: data.x,
-                        y: data.y,
-                        z: data.z
-                    }));
-                }
+
+                if (client.readyState !== 1) return;
+                if (client.userId === ws.userId) return; // 👈 ESSENCIAL
+
+                client.send(JSON.stringify({
+                    message: "update",
+                    id: ws.userId,
+                    x: data.x,
+                    y: data.y,
+                    z: data.z
+                }));
             });
         }
     });
 
+    // ----------------------
+    // DISCONNECT
+    // ----------------------
     ws.on("close", () => {
 
-        if (ws.userId) {
+        if (!ws.userId) return;
 
-            delete players[ws.userId];
+        delete players[ws.userId];
 
-            wss.clients.forEach(client => {
-                if (client.readyState === 1) {
-                    client.send(JSON.stringify({
-                        message: "remove",
-                        id: ws.userId
-                    }));
-                }
-            });
-        }
+        wss.clients.forEach(client => {
+            if (client.readyState === 1) {
+                client.send(JSON.stringify({
+                    message: "remove",
+                    id: ws.userId
+                }));
+            }
+        });
     });
 });
 
