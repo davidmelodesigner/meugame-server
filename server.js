@@ -37,12 +37,14 @@ wss.on("connection", (ws) => {
                 id: ws.userId
             }));
         }
-        if (data.message === "updateplayer") {
+       if (data.message === "updateplayer") {
 
-            ws.send(JSON.stringify({
-                message: "updateplayer",
-                data: data
-            }));
+            wss.clients.forEach(client => {
+        
+                if (client.readyState !== 1) return;
+        
+                client.send(JSON.stringify(data));
+            });
         }
     });
 
