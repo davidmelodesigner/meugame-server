@@ -49,14 +49,12 @@ wss.on("connection", (ws) => {
         if (data.message === "updateplayer") {
 
             if (!players[ws.userId]) return;
-
-            players[ws.userId].x = data.x;
-            players[ws.userId].y = data.y;
-            players[ws.userId].z = data.z;
-            players[ws.userId].rx = data.rx;
-            players[ws.userId].ry = data.ry;
-            players[ws.userId].rz = data.rz;
-            players[ws.userId].lastSeen = Date.now();
+        
+            players[ws.userId] = {
+                ...players[ws.userId],
+                ...data,          // <- pega tudo que vier do client
+                lastSeen: Date.now()
+            };
         }
 
         // -------------------------
