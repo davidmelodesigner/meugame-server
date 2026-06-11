@@ -22,8 +22,7 @@ wss.on("connection", (ws) => {
         const data = JSON.parse(msg.toString());
         if(data.message=="startserver"){
             ws.send(JSON.stringify({
-                    message: "connected",
-                    data: data
+                    message: "connected"
             }));
 
         }
