@@ -13,21 +13,25 @@ const wss = new WebSocket.Server({ server });
 
 const players = {};
 
+function generateId() {
+    return Math.random().toString(36).substr(2, 9);
+}
+
 wss.on("connection", (ws) => {
 
-    ws.userId = null;
+    ws.userId = generateId();
 
     ws.on("message", (msg) => {
-
         const data = JSON.parse(msg.toString());
-        if(data.message=="startserver"){
-            ws.send(JSON.stringify({
-                    message: "connected"
-            }));
 
+        if (data.message === "startserver") {
+            ws.send(JSON.stringify({
+                message: "connected",
+                id: ws.userId
+            }));
         }
-       
     });
+
 });
 
 server.listen(process.env.PORT || 3000, () => {
