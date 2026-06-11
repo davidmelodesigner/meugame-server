@@ -20,78 +20,14 @@ wss.on("connection", (ws) => {
     ws.on("message", (msg) => {
 
         const data = JSON.parse(msg.toString());
-
-        // ----------------------
-        // JOIN GAME
-        // ----------------------
-        if (data.message === "join") {
-
-            ws.userId = data.id;
-
-            players[ws.userId] = {
-                id: ws.userId,
-                x: 0,
-                y: 0,
-                z: 0
-            };
-
-            // manda snapshot só pros novos
+        if(data.message=="update"){
             ws.send(JSON.stringify({
-                message: "snapshot",
-                players: Object.values(players)
+                    message: "updateplayer",
+                    data: data
             }));
 
-            return;
         }
-
-        // ----------------------
-        // UPDATE PLAYER
-        // ----------------------
-        if (data.message === "update") {
-
-            if (!ws.userId) return;
-
-            players[ws.userId] = {
-                id: ws.userId,
-                x: data.x,
-                y: data.y,
-                z: data.z
-            };
-
-            // manda update PRA TODOS MENOS QUEM ENVIOU
-            wss.clients.forEach(client => {
-
-                if (client.readyState !== 1) return;
-                if (client.userId === ws.userId) return; // 👈 ESSENCIAL
-
-                client.send(JSON.stringify({
-                    message: "update",
-                    id: ws.userId,
-                    x: data.x,
-                    y: data.y,
-                    z: data.z
-                }));
-            });
-        }
-    });
-
-    // ----------------------
-    // DISCONNECT
-    // ----------------------
-    ws.on("close", () => {
-
-        if (!ws.userId) return;
-
-        delete players[ws.userId];
-
-        wss.clients.forEach(client => {
-            if (client.readyState === 1) {
-                client.send(JSON.stringify({
-                    message: "remove",
-                    id: ws.userId
-                }));
-            }
-        });
+       
     });
 });
 
