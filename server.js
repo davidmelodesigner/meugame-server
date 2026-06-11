@@ -3,38 +3,36 @@ const http = require("http");
 const WebSocket = require("ws");
 
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-const players = {};
 
 app.get("/", (req, res) => {
     res.send("SERVER ONLINE");
 });
 
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+const players = {};
+
 wss.on("connection", (ws) => {
 
-    console.log("PLAYER CONNECTED");
+    ws.userId = null;
 
-    ws.id = null;
-
-    // quando recebe mensagem
     ws.on("message", (msg) => {
         const data = JSON.parse(msg.toString());
 
-        // JOIN PLAYER
+        // ENTRAR NO JOGO
         if (data.message === "join") {
-            ws.id = data.id;
 
-            // salva player
-            players[ws.id] = {
-                id: ws.id,
+            ws.userId = data.id;
+
+            players[ws.userId] = {
+                id: ws.userId,
                 x: 0,
                 y: 0,
                 z: 0
             };
 
-            // manda snapshot
+            // snapshot (igual teu sistema antigo)
             ws.send(JSON.stringify({
                 message: "snapshot",
                 players: Object.values(players)
@@ -43,25 +41,24 @@ wss.on("connection", (ws) => {
             return;
         }
 
-        // UPDATE POSITION
+        // UPDATE PLAYER
         if (data.message === "update") {
 
-            if (!ws.id) return;
+            if (!ws.userId) return;
 
-            // atualiza mundo
-            players[ws.id] = {
-                id: ws.id,
+            players[ws.userId] = {
+                id: ws.userId,
                 x: data.x,
                 y: data.y,
                 z: data.z
             };
 
-            // broadcast pra todos
+            // broadcast simples
             wss.clients.forEach(client => {
                 if (client.readyState === 1) {
                     client.send(JSON.stringify({
                         message: "update",
-                        id: ws.id,
+                        id: ws.userId,
                         x: data.x,
                         y: data.y,
                         z: data.z
@@ -71,27 +68,24 @@ wss.on("connection", (ws) => {
         }
     });
 
-    // disconnect
     ws.on("close", () => {
 
-        if (ws.id && players[ws.id]) {
+        if (ws.userId) {
 
-            delete players[ws.id];
+            delete players[ws.userId];
 
             wss.clients.forEach(client => {
                 if (client.readyState === 1) {
                     client.send(JSON.stringify({
                         message: "remove",
-                        id: ws.id
+                        id: ws.userId
                     }));
                 }
             });
         }
-
-        console.log("PLAYER DISCONNECTED");
     });
 });
 
-server.listen(3000, () => {
-    console.log("SERVER ONLINE PORT 3000");
+server.listen(process.env.PORT || 3000, () => {
+    console.log("SERVER ONLINE");
 });
