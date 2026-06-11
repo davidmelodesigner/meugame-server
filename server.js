@@ -74,7 +74,19 @@ wss.on("connection", (ws) => {
         // -------------------------
         if (data.message === "disconnect") {
 
-            delete players[ws.userId];
+            const id = ws.userId;
+        
+            delete players[id];
+        
+            wss.clients.forEach(client => {
+        
+                if (client.readyState !== 1) return;
+        
+                client.send(JSON.stringify({
+                    message: "remove",
+                    userId: id
+                }));
+            });
         }
     });
 
