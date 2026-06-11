@@ -14,43 +14,49 @@ const wss = new WebSocket.Server({ server });
 
 const players = {};
 
-function generateId() {
-    return Math.random().toString(36).substr(2, 9);
-}
-
 // -------------------------
 // CONNECTION
 // -------------------------
 wss.on("connection", (ws) => {
 
-    ws.userId = generateId();
-
-    players[ws.userId] = {
-        id: ws.userId,
-        x: 0, y: 0, z: 0,
-        rx: 0, ry: 0, rz: 0,
-        lastSeen: Date.now()
-    };
+    ws.userId = null;
 
     ws.on("message", (msg) => {
 
         const data = JSON.parse(msg.toString());
 
         // -------------------------
-        // START
+        // START / LOGIN
         // -------------------------
         if (data.message === "startserver") {
+
+            // 👇 ID vem do CLIENTE (OBRIGATÓRIO)
+            ws.userId = data.userId;
+
+            // cria player só se não existir
+            if (!players[ws.userId]) {
+                players[ws.userId] = {
+                    id: ws.userId,
+                    x: 0, y: 0, z: 0,
+                    rx: 0, ry: 0, rz: 0,
+                    lastSeen: Date.now()
+                };
+            }
 
             ws.send(JSON.stringify({
                 message: "connected",
                 id: ws.userId
             }));
+
+            return;
         }
 
         // -------------------------
         // UPDATE PLAYER
         // -------------------------
         if (data.message === "updateplayer") {
+
+            if (!data.userId || !players[data.userId]) return;
 
             players[data.userId] = {
                 ...players[data.userId],
@@ -66,7 +72,7 @@ wss.on("connection", (ws) => {
         }
 
         // -------------------------
-        // MANUAL DISCONNECT
+        // DISCONNECT MANUAL
         // -------------------------
         if (data.message === "disconnect") {
 
@@ -90,13 +96,18 @@ wss.on("connection", (ws) => {
         // -------------------------
         if (data.message === "ping") {
 
-            if (players[ws.userId]) {
+            if (ws.userId && players[ws.userId]) {
                 players[ws.userId].lastSeen = Date.now();
             }
         }
     });
 
+    // -------------------------
+    // CLOSE SOCKET
+    // -------------------------
     ws.on("close", () => {
+
+        if (!ws.userId) return;
 
         delete players[ws.userId];
 
@@ -139,7 +150,7 @@ setInterval(() => {
 setInterval(() => {
 
     const now = Date.now();
-    const timeout = 5000; // 5s sem ping = morto
+    const timeout = 5000;
 
     for (const id in players) {
 
