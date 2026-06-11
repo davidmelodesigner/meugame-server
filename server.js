@@ -41,7 +41,12 @@ wss.on("connection", (ws) => {
 
             ws.send(JSON.stringify({
                 message: "updateplayer",
-                data: data
+                data: JSON.stringify({
+                        x: ws.x,
+                        y: ws.y,
+                        z: ws.z,
+                        userId: ws.userId
+                    })
             }));
         }
     });
