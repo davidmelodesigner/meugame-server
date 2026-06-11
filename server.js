@@ -41,7 +41,22 @@ wss.on("connection", (ws) => {
                 id: ws.userId
             }));
         }
+        if (data.message === "disconnect") {
 
+            const id = data.userId;
+        
+            delete players[id];
+        
+            wss.clients.forEach(client => {
+        
+                if (client.readyState !== 1) return;
+        
+                client.send(JSON.stringify({
+                    message: "remove",
+                    userId: id
+                }));
+            });
+        }
         // 💥 UPDATE: só salva no servidor
         if (data.message === "updateplayer") {
 
