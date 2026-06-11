@@ -39,6 +39,16 @@ wss.on("connection", (ws) => {
         }
        if (data.message === "updateplayer") {
 
+            players[data.userId] = {
+                ...players[data.userId],
+                x: data.x,
+                y: data.y,
+                z: data.z,
+                rx: data.rx,
+                ry: data.ry,
+                rz: data.rz
+            };
+        
             wss.clients.forEach(client => {
         
                 if (client.readyState !== 1) return;
