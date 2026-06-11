@@ -37,6 +37,13 @@ wss.on("connection", (ws) => {
                 id: ws.userId
             }));
         }
+        if (data.message === "updateplayer") {
+
+            ws.send(JSON.stringify({
+                message: "updateplayer",
+                data: data
+            }));
+        }
     });
 
     ws.on("close", () => {
