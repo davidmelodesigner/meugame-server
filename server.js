@@ -11,9 +11,7 @@ const app = express();
 app.get("/", (req, res) => {
     homepage(req, res);
 });
-app.get("/login", (req, res) => {
-    loginusers(req, res);
-});
+app.post("/login", loginusers);
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
