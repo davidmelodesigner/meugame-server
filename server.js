@@ -33,6 +33,13 @@ wss.on("connection", (ws) => {
                         success: false
                     }));
 				    break;
+				   case "login":
+				    ws.send(JSON.stringify({
+                        message: "connected",
+                        usuario: data.usuario,
+                        pass: data.pass
+                    }));
+				    break;
 				}
 
         } catch (err) {
