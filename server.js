@@ -2,7 +2,6 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 const homepage = require("./home.js");
-const { Pool } = require("pg");
 const homepage = require("./login.js");
 
 
