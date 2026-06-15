@@ -2,38 +2,13 @@ const { Pool } = require("pg");
 const evenconfig = require("./evenconfig.js");
 
 const pool = new Pool({
-    connectionString: evenconfig,
+    connectionString: evenconfig(),
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-async function logidesconect(userid, ws) {
-    try {
-        const result = await pool.query(
-            "SELECT id, nome FROM users WHERE id = $1 LIMIT 1",
-            [userid]
-        );
-
-        if (result.rows.length === 0) {
-            return { success: false };
-        }
- 
-
-        ws.send(JSON.stringify({
-            message: "userdisconnect", 
-        }));
-
-        return {
-            success: true,  
-        };
-
-    } catch (err) {
-        console.log(err);
-
-        return { message: "userdisconnect" };
-    }
-}
+// ---------------- LOGIN ----------------
 async function loginusers(usuario, senha, ws) {
     try {
         const result = await pool.query(
@@ -42,6 +17,10 @@ async function loginusers(usuario, senha, ws) {
         );
 
         if (result.rows.length === 0) {
+            ws.send(JSON.stringify({
+                message: "login_failed"
+            }));
+
             return { success: false };
         }
 
@@ -56,9 +35,30 @@ async function loginusers(usuario, senha, ws) {
         }));
 
         return {
-            success: true, 
+            success: true,
             userdata: userobj
         };
+
+    } catch (err) {
+        console.log(err);
+
+        ws.send(JSON.stringify({
+            message: "errorserver"
+        }));
+
+        return { success: false };
+    }
+}
+
+// ---------------- DISCONNECT ----------------
+async function logidesconect(userid, ws) {
+    try {
+        ws.send(JSON.stringify({
+            message: "userdisconnect",
+            userid: userid
+        }));
+
+        return { success: true };
 
     } catch (err) {
         console.log(err);
@@ -66,4 +66,9 @@ async function loginusers(usuario, senha, ws) {
         return { success: false };
     }
 }
-module.exports = loginusers,logidesconect;
+
+// ---------------- EXPORT ----------------
+module.exports = {
+    loginusers,
+    logidesconect
+};
