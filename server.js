@@ -14,124 +14,109 @@ const wss = new WebSocket.Server({ server });
 
 const players = {};
 
-// -------------------------
-// CONNECTION
-// -------------------------
+// ---------------- CONNECTION ----------------
 wss.on("connection", (ws) => {
 
     ws.userId = Math.random().toString(36).substr(2, 9);
 
     players[ws.userId] = {
         id: ws.userId,
-        x: 0, y: 0, z: 0,
-        rx: 0, ry: 0, rz: 0,
+        x: 200,
+        y: 200,
+        anim: null,
         lastSeen: Date.now()
     };
+
+    ws.send(JSON.stringify({
+        message: "connected",
+        id: ws.userId
+    }));
 
     ws.on("message", (msg) => {
 
         const data = JSON.parse(msg.toString());
 
-        // -------------------------
-        // START
-        // -------------------------
-        if (data.message === "startserver") {
-
-            ws.send(JSON.stringify({
-                message: "connected",
-                id: ws.userId
-            }));
-        }
-
-        // -------------------------
-        // UPDATE
-        // -------------------------
+        // ---------------- UPDATE PLAYER ----------------
         if (data.message === "updateplayer") {
 
-            if (!players[ws.userId]) return;
-        
-            players[ws.userId] = {
-                ...players[ws.userId],
-                ...data,          // <- pega tudo que vier do client
-                lastSeen: Date.now()
-            };
+            if (!players[data.id]) return;
+
+            // 🔥 atualiza SOMENTE o necessário (não espalha lixo)
+            players[data.id].x = data.x;
+            players[data.id].y = data.y;
+            players[data.id].anim = data.anim;
+            players[data.id].lastSeen = Date.now();
         }
 
-        // -------------------------
-        // PING
-        // -------------------------
+        // ---------------- PING ----------------
         if (data.message === "ping") {
-
             if (players[ws.userId]) {
                 players[ws.userId].lastSeen = Date.now();
             }
         }
 
-        // -------------------------
-        // DISCONNECT MANUAL
-        // -------------------------
+        // ---------------- DISCONNECT ----------------
         if (data.message === "disconnect") {
 
-            const id = ws.userId;
-        
-            delete players[id];
-        
-            wss.clients.forEach(client => {
-        
-                if (client.readyState !== 1) return;
-        
-                client.send(JSON.stringify({
-                    message: "remove",
-                    userId: id
-                }));
-            });
+            delete players[ws.userId];
+
+            broadcastRemove(ws.userId);
         }
     });
 
     ws.on("close", () => {
         delete players[ws.userId];
+        broadcastRemove(ws.userId);
     });
 });
 
+// ---------------- SNAPSHOT BROADCAST ----------------
+function broadcast() {
 
-// -------------------------
-// SNAPSHOT
-// -------------------------
-setInterval(() => {
-
-    const snapshot = {
+    const snapshot = JSON.stringify({
         message: "snapshot",
         players: Object.values(players)
-    };
+    });
 
     wss.clients.forEach(client => {
         if (client.readyState === 1) {
-            client.send(JSON.stringify(snapshot));
+            client.send(snapshot);
         }
     });
+}
 
-}, 20);
+function broadcastRemove(id) {
+    wss.clients.forEach(client => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify({
+                message: "remove",
+                userId: id
+            }));
+        }
+    });
+}
 
+// ---------------- LOOP ----------------
+setInterval(() => {
+    broadcast();
+}, 50);
 
-// -------------------------
-// GHOST CLEANER
-// -------------------------
+// ---------------- CLEANER ----------------
 setInterval(() => {
 
     const now = Date.now();
     const timeout = 5000;
 
     for (const id in players) {
-
         if (now - players[id].lastSeen > timeout) {
             delete players[id];
+            broadcastRemove(id);
         }
     }
 
 }, 2000);
 
-
-// -------------------------
+// ---------------- START ----------------
 server.listen(process.env.PORT || 3000, () => {
     console.log("SERVER ONLINE");
 });
