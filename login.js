@@ -30,8 +30,8 @@ async function loginusers(usuario, senha, ws) {
         }));
 
         return {
-            success: true,
-            user: userobj
+            success: true, 
+            userdata: userobj
         };
 
     } catch (err) {
