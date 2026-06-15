@@ -43,7 +43,7 @@ wss.on("connection", (ws) => {
             console.log(err);
 
             ws.send(JSON.stringify({
-                message: "error",
+                message: "errorserver",
                 success: false
             }));
 
