@@ -25,13 +25,15 @@ wss.on("connection", (ws) => {
         try {
 
             const data = JSON.parse(msg.toString());
-
-            if (data.message==="testconnection") {
-            	ws.send(JSON.stringify({
+ 
+            switch (data.message) {
+				  case "testconnection":
+				    ws.send(JSON.stringify({
                         message: "connected",
                         success: false
                     }));
-            }
+				    break;
+				}
 
         } catch (err) {
 
