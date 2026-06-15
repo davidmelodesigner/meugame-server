@@ -5,15 +5,7 @@ const homepage = require("./home.js");
 const { Pool } = require("pg");
 const homepage = require("./login.js");
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-const pool = new Pool({
-    connectionString: "postgresql://neondb_owner:npg_qUTQ3o4esZjF@ep-sparkling-pond-apv9ip8u-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
 
 const app = express();
 
