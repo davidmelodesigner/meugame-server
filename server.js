@@ -3,6 +3,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const homepage = require("./home.js");
 const { Pool } = require("pg");
+const homepage = require("./login.js");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -19,7 +20,9 @@ const app = express();
 app.get("/", (req, res) => {
     homepage(req, res);
 });
-
+app.get("/login", (req, res) => {
+    loginusers(req, res);
+});
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
