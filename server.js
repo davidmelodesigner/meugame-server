@@ -11,13 +11,24 @@ const app = express();
 app.get("/", (req, res) => {
     homepage(req, res);
 });
-app.post("/login", (req, res) => {
-    loginusers(req, res);
-});
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const players = {};
+
+if (data.message === "login") {
+
+    const resultado = await loginusers(
+        data.usuario,
+        data.senha
+    );
+
+    ws.send(JSON.stringify({
+        message: "login",
+        success: resultado.success
+    }));
+}
 
 // ---------------- CONNECTION ----------------
 wss.on("connection", (ws) => {
