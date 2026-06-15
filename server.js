@@ -34,7 +34,7 @@ wss.on("connection", (ws) => {
                     }));
 				    break;
 				   case "login":
-				    loginusers(data.usuario, data.senha, ws);
+				    loginusers(data.usuario, data.pass, ws);
 				    break;
 				}
 
