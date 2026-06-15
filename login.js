@@ -1,13 +1,13 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-    connectionString: "SUA_CONNECTION_STRING",
+    connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-module.exports = async (req, res) => {
+async function loginusers(req, res) {
 
     try {
 
@@ -40,4 +40,6 @@ module.exports = async (req, res) => {
 
     }
 
-};
+}
+
+module.exports = loginusers;
