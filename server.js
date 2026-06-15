@@ -72,7 +72,30 @@ wss.on("connection", (ws) => {
 
                 return;
             }
-
+            // ---------------- LOGOUT ----------------
+            if (data.message === "disconnecting") {
+            
+                if (!ws.userId) return;
+            
+                console.log("Logout solicitado:", ws.userId);
+            
+                // remove do sistema
+                delete users[ws.userId];
+            
+                // avisa o cliente que pode sair
+                ws.send(JSON.stringify({
+                    message: "disconnected",
+                    success: true
+                }));
+            
+                // fecha conexão
+                ws.close();
+            
+                // atualiza outros players
+                enviarUsuarios();
+            
+                return;
+            }
             // ---------------- UPDATE PLAYER ----------------
             if (data.message === "updateplayer") {
 
