@@ -8,6 +8,32 @@ const pool = new Pool({
     }
 });
 
+async function logidesconect(userid, ws) {
+    try {
+        const result = await pool.query(
+            "SELECT id, nome FROM users WHERE id = $1 LIMIT 1",
+            [userid]
+        );
+
+        if (result.rows.length === 0) {
+            return { success: false };
+        }
+ 
+
+        ws.send(JSON.stringify({
+            message: "userdisconnect", 
+        }));
+
+        return {
+            success: true,  
+        };
+
+    } catch (err) {
+        console.log(err);
+
+        return { message: "userdisconnect" };
+    }
+}
 async function loginusers(usuario, senha, ws) {
     try {
         const result = await pool.query(
@@ -40,5 +66,4 @@ async function loginusers(usuario, senha, ws) {
         return { success: false };
     }
 }
-
-module.exports = loginusers;
+module.exports = loginusers,logidesconect;
