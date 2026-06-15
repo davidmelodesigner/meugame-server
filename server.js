@@ -14,6 +14,9 @@ app.get("/", (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// Usuários conectados
+const users = {};
+
 // ---------------- CONNECTION ----------------
 wss.on("connection", (ws) => {
 
@@ -37,10 +40,49 @@ wss.on("connection", (ws) => {
                     data.senha
                 );
 
-                ws.send(JSON.stringify({
-                    message: "login",
-                    success: resultado.success
-                }));
+                if (resultado.success) {
+
+                    ws.userId = "user_" + resultado.id;
+
+                    users[ws.userId] = {
+                        id: ws.userId,
+                        nome: resultado.usuario,
+                        x: 200,
+                        y: 200,
+                        anim: null
+                    };
+
+                    ws.send(JSON.stringify({
+                        message: "login",
+                        success: true,
+                        id: ws.userId,
+                        nome: resultado.usuario
+                    }));
+
+                    enviarUsuarios();
+
+                } else {
+
+                    ws.send(JSON.stringify({
+                        message: "login",
+                        success: false
+                    }));
+
+                }
+
+                return;
+            }
+
+            // ---------------- UPDATE PLAYER ----------------
+            if (data.message === "updateplayer") {
+
+                if (!users[ws.userId]) return;
+
+                users[ws.userId].x = data.x;
+                users[ws.userId].y = data.y;
+                users[ws.userId].anim = data.anim;
+
+                enviarUsuarios();
 
                 return;
             }
@@ -59,12 +101,47 @@ wss.on("connection", (ws) => {
     });
 
     ws.on("close", () => {
+
         console.log("Cliente desconectado.");
+
+        delete users[ws.userId];
+
+        enviarUsuarios();
+
     });
 
 });
 
+// ---------------- ENVIAR USUÁRIOS ----------------
+function enviarUsuarios() {
+
+    wss.clients.forEach(cliente => {
+
+        if (cliente.readyState !== WebSocket.OPEN) return;
+        if (!cliente.userId) return;
+
+        const lista = [];
+
+        for (const id in users) {
+
+            if (id === cliente.userId) continue;
+
+            lista.push(users[id]);
+
+        }
+
+        cliente.send(JSON.stringify({
+            message: "players",
+            players: lista
+        }));
+
+    });
+
+}
+
 // ---------------- START ----------------
 server.listen(process.env.PORT || 3000, () => {
+
     console.log("SERVER ONLINE");
+
 });
