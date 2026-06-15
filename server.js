@@ -36,6 +36,9 @@ wss.on("connection", (ws) => {
 				   case "login":
 				    loginusers(data.usuario, data.pass, ws);
 				    break;
+					case "disconnecting":
+				    logidesconect(data.id, ws);
+				    break;
 				}
 
         } catch (err) {
