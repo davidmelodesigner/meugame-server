@@ -2,7 +2,7 @@ const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 const homepage = require("./home.js");
-const homepage = require("./login.js");
+const loginusers = require("./login.js");
 
 
 
@@ -11,7 +11,9 @@ const app = express();
 app.get("/", (req, res) => {
     homepage(req, res);
 });
-app.post("/login", loginusers);
+app.post("/login", (req, res) => {
+    loginusers(req, res);
+});
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
