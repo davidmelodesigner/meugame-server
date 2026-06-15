@@ -12,9 +12,9 @@ async function loginusers(usuario, senha) {
     try {
 
         const result = await pool.query(
-            "SELECT id, usuario FROM usuarios WHERE email = $1 AND password = $2 LIMIT 1",
-            [usuario, senha]
-        );
+    "SELECT id, nome FROM users WHERE email = $1 AND password = $2 LIMIT 1",
+    [usuario, senha]
+);
 
         if (result.rows.length === 0) {
             return {
