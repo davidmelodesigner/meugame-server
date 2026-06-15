@@ -1,98 +1,44 @@
-const express = require("express");
-const http = require("http");
-const WebSocket = require("ws");
+const { Pool } = require("pg");
+const evenconfig = require("./evenconfig.js");
 
-const homepage = require("./home.js");
-const loginusers = require("./login.js");
-
-const app = express();
-
-app.get("/", (req, res) => {
-    homepage(req, res);
+const pool = new Pool({
+    connectionString: "postgresql://neondb_owner:npg_qUTQ3o4esZjF@ep-sparkling-pond-apv9ip8u-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+async function loginusers(usuario, senha, ws) {
+    try {
+        const result = await pool.query(
+            "SELECT id, nome FROM users WHERE email = $1 AND password = $2 LIMIT 1",
+            [usuario, senha]
+        );
 
-// Usuários conectados
-const users = {};
-
-// ---------------- CONNECTION ----------------
-wss.on("connection", (ws) => {
-
-    ws.on("message", async (msg) => {
-
-        try {
-
-            const data = JSON.parse(msg.toString());
- 
-            switch (data.message) {
-				  case "testconnection":
-				    ws.send(JSON.stringify({
-                        message: "connected",
-                        success: false
-                    }));
-				    break;
-				   case "login":
-				    loginusers(req, resp,ws);
-				    break;
-				}
-
-        } catch (err) {
-
-            console.log(err);
-
-            ws.send(JSON.stringify({
-                message: "error",
-                success: false
-            }));
-
+        if (result.rows.length === 0) {
+            return { success: false };
         }
 
-    });
+        const userobj = {
+            id: result.rows[0].id,
+            nome: result.rows[0].nome
+        };
 
-    ws.on("close", () => {
-
-        console.log("Cliente desconectado.");
-
-        delete users[ws.userId];
-
-        enviarUsuarios();
-
-    });
-
-});
-
-// ---------------- ENVIAR USUÁRIOS ----------------
-function enviarUsuarios() {
-
-    wss.clients.forEach(cliente => {
-
-        if (cliente.readyState !== WebSocket.OPEN) return;
-        if (!cliente.userId) return;
-
-        const lista = [];
-
-        for (const id in users) {
-
-            if (id === cliente.userId) continue;
-
-            lista.push(users[id]);
-
-        }
-
-        cliente.send(JSON.stringify({
-            message: "players",
-            players: lista
+        ws.send(JSON.stringify({
+            message: "userlogued",
+            userdata: userobj
         }));
 
-    });
+        return {
+            success: true,
+            user: userobj
+        };
 
+    } catch (err) {
+        console.log(err);
+
+        return { success: false };
+    }
 }
 
-// ---------------- START ----------------
-server.listen(process.env.PORT || 3000, () => {
-
-    console.log("SERVER ONLINE");
-
-});
+module.exports = loginusers;
