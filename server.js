@@ -34,11 +34,7 @@ wss.on("connection", (ws) => {
                     }));
 				    break;
 				   case "login":
-				    ws.send(JSON.stringify({
-                        message: "userlogued",
-                        usuario: data.usuario,
-                        pass: data.pass
-                    }));
+				    loginusers(req, resp,ws);
 				    break;
 				}
 
